@@ -1,0 +1,29 @@
+package test.positive.with_parents_class.parents;
+
+import annotations.AfterSuite;
+import annotations.AfterTest;
+import annotations.BeforeSuite;
+import annotations.BeforeTest;
+
+public class ParentClassWithBeforeAndAfterMethods {
+
+    @BeforeSuite
+    public static void setUp() {
+        System.out.println("Before suite parent");
+    }
+
+    @BeforeTest
+    public static void setUpTest() {
+        System.out.println("Before test parent");
+    }
+
+    @AfterTest
+    public static void tearDownTest() {
+        System.out.println("After test parent");
+    }
+
+    @AfterSuite
+    public static void tearDown() {
+        System.out.println("After suite parent");
+    }
+}
