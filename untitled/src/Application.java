@@ -122,6 +122,6 @@ public class Application {
 //        TestRunner.runTests(TestNegativeBeforeTestMethodWithoutTests.class);
 
         // Позитивный тест csv
-        TestRunner.runTests(TestCsv.class);
+//        TestRunner.runTests(TestCsv.class);
     }
 }

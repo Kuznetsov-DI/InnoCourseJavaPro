@@ -10,12 +10,12 @@ public class TestPositive {
     }
 
     @BeforeTest
-    public static void setUpTest(){
+    public void setUpTest() {
         System.out.println("Before test");
     }
 
     @AfterTest
-    public static void tearDownTest(){
+    public void tearDownTest() {
         System.out.println("After test");
     }
 

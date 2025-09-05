@@ -6,7 +6,9 @@ import exception.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,12 +25,10 @@ public class TestRunner {
     public static void runTests(Class<?> c) {
         AtomicInteger beforeSuitCount = new AtomicInteger();
         AtomicInteger afterSuitCount = new AtomicInteger();
-        AtomicInteger beforeTestCount = new AtomicInteger();
-        AtomicInteger afterTestCount = new AtomicInteger();
         Method beforeSuiteMethod = null;
         Method afterSuiteMethod = null;
-        Method beforeTestMethod = null;
-        Method afterTestMethod = null;
+        List<Method> beforeTestMethods = new ArrayList<>();
+        List<Method> afterTestMethods = new ArrayList<>();
         Map<Method, Integer> testMethods = new HashMap<>();
         Object instance;
 
@@ -44,30 +44,29 @@ public class TestRunner {
 
             // BeforeSuite проверки аннотации
             if (method.isAnnotationPresent(BeforeSuite.class)) {
-                beforeSuiteMethod = validateBeforeAndAfterMethods(method, beforeSuitCount, c, "BeforeSuite");
+                beforeSuiteMethod = validateBeforeSuiteAndAfterSuiteMethods(method, beforeSuitCount, c, "BeforeSuite");
             }
 
             // AfterSuite проверки аннотации
             if (method.isAnnotationPresent(AfterSuite.class)) {
-                afterSuiteMethod = validateBeforeAndAfterMethods(method, afterSuitCount, c, "AfterSuite");
+                afterSuiteMethod = validateBeforeSuiteAndAfterSuiteMethods(method, afterSuitCount, c, "AfterSuite");
             }
 
             // BeforeTest проверки аннотации
             if (method.isAnnotationPresent(BeforeTest.class)) {
-                beforeTestMethod = validateBeforeAndAfterMethods(method, beforeTestCount, c, "BeforeTest");
+                validateNonStaticMethod(method, c);
+                beforeTestMethods.add(method);
             }
 
             // AfterTest проверки аннотации
             if (method.isAnnotationPresent(AfterTest.class)) {
-                afterTestMethod = validateBeforeAndAfterMethods(method, afterTestCount, c, "AfterTest");
+                validateNonStaticMethod(method, c);
+                afterTestMethods.add(method);
             }
 
             //Test проверки аннотации
             if (method.isAnnotationPresent(Test.class)) {
-                if (Modifier.isStatic(method.getModifiers())) {
-                    throw new WrongModifiersMethodException("Method - " + c.getSimpleName() + "." + method.getName() +
-                            " must be not a static for Test annotation");
-                }
+                validateNonStaticMethod(method, c);
 
                 Test testAnnotation = method.getAnnotation(Test.class);
                 if (testAnnotation.priority() < 1 || testAnnotation.priority() > 10) {
@@ -81,9 +80,9 @@ public class TestRunner {
 
         //Вызов метода BeforeSuite, если он есть в классе и если есть тестовые методы (Если метода BeforeSuit нет в классе метод ищется у родительского класса)
         if (beforeSuiteMethod != null && !testMethods.isEmpty()) {
-            invokeBeforeAndAfterMethods(beforeSuiteMethod, c);
+            invokeMethod(beforeSuiteMethod, c, null);
         } else if (!testMethods.isEmpty()) {
-            invokeParentsBeforeAndAfterIfHave(c, BeforeSuite.class);
+            invokeParentsBeforeSuiteAndAfterSuiteIfHave(c, BeforeSuite.class);
         } else {
             throw new InvokingMethodException("You have no tests in " + c.getSimpleName() + " class");
         }
@@ -95,10 +94,10 @@ public class TestRunner {
             for (Method method : prioritizedMethods) {
 
                 //Вызов метода BeforeTest, если он есть в классе и если есть тестовые методы (Если метода BeforeTest нет в классе метод ищется у родительского класса)
-                if (beforeTestMethod != null && !testMethods.isEmpty()) {
-                    invokeBeforeAndAfterMethods(beforeTestMethod, c);
+                if (!beforeTestMethods.isEmpty() && !testMethods.isEmpty()) {
+                    beforeTestMethods.forEach(el -> invokeMethod(el, c, instance));
                 } else if (!testMethods.isEmpty()) {
-                    invokeParentsBeforeAndAfterIfHave(c, BeforeTest.class);
+                    invokeParentBeforeTestAndAfterTestIfHave(c, BeforeTest.class, instance);
                 } else {
                     throw new InvokingMethodException("You have no tests in " + c.getSimpleName() + " class");
                 }
@@ -139,10 +138,10 @@ public class TestRunner {
                 }
 
                 //Вызов метода AfterTest, если он есть в классе и если есть тестовые методы (Если метода AfterTest нет в классе метод ищется у родительского класса)
-                if (afterTestMethod != null && !testMethods.isEmpty()) {
-                    invokeBeforeAndAfterMethods(afterTestMethod, c);
+                if (!afterTestMethods.isEmpty() && !testMethods.isEmpty()) {
+                    afterTestMethods.forEach(el -> invokeMethod(el, c, instance));
                 } else if (!testMethods.isEmpty()) {
-                    invokeParentsBeforeAndAfterIfHave(c, AfterTest.class);
+                    invokeParentBeforeTestAndAfterTestIfHave(c, AfterTest.class, instance);
                 } else {
                     throw new InvokingMethodException("You have no tests in " + c.getSimpleName() + " class");
                 }
@@ -151,21 +150,21 @@ public class TestRunner {
 
         //Вызов метода AfterSuite, если он есть в классе и если есть тестовые методы (Если метода AfterSuit нет в классе метод ищется у родительского класса)
         if (afterSuiteMethod != null && !testMethods.isEmpty()) {
-            invokeBeforeAndAfterMethods(afterSuiteMethod, c);
+            invokeMethod(afterSuiteMethod, c, null);
         } else if (!testMethods.isEmpty()) {
-            invokeParentsBeforeAndAfterIfHave(c, AfterSuite.class);
+            invokeParentsBeforeSuiteAndAfterSuiteIfHave(c, AfterSuite.class);
         } else {
             throw new InvokingMethodException("You have no tests in " + c.getSimpleName() + " class");
         }
     }
 
     /**
-     * Метод вызова Before и After методов родительского класса, вызывается метод первого же класса, в котором он описан
+     * Метод вызова BeforeSuite и AfterSuite методов родительского класса, вызывается метод первого же класса, в котором он описан
      *
      * @param c          класс, в котором запускаем тесты
      * @param annotation конкретная аннотация Before или After
      */
-    private static void invokeParentsBeforeAndAfterIfHave(Class<?> c, Class<? extends Annotation> annotation) {
+    private static void invokeParentsBeforeSuiteAndAfterSuiteIfHave(Class<?> c, Class<? extends Annotation> annotation) {
         var superClass = c.getSuperclass();
         Method methodForInvoke = null;
 
@@ -173,12 +172,33 @@ public class TestRunner {
             AtomicInteger count = new AtomicInteger();
             for (Method method : superClass.getDeclaredMethods()) {
                 if (method.isAnnotationPresent(annotation)) {
-                    methodForInvoke = validateBeforeAndAfterMethods(method, count, superClass, annotation.getName());
+                    methodForInvoke = validateBeforeSuiteAndAfterSuiteMethods(method, count, superClass, annotation.getName());
                 }
             }
 
             if (methodForInvoke != null) {
-                invokeBeforeAndAfterMethods(methodForInvoke, c);
+                invokeMethod(methodForInvoke, c, null);
+                break;
+            } else {
+                superClass = superClass.getSuperclass();
+            }
+        }
+    }
+
+    private static void invokeParentBeforeTestAndAfterTestIfHave(Class<?> c, Class<? extends Annotation> annotation, Object instance) {
+        var superClass = c.getSuperclass();
+        List<Method> methodsForInvoke = new ArrayList<>();
+
+        while (!superClass.equals(Object.class)) {
+            for (Method method : superClass.getDeclaredMethods()) {
+                if (method.isAnnotationPresent(annotation)) {
+                    validateNonStaticMethod(method, c);
+                    methodsForInvoke.add(method);
+                }
+            }
+
+            if (!methodsForInvoke.isEmpty()) {
+                methodsForInvoke.forEach(method -> invokeMethod(method, c, instance));
                 break;
             } else {
                 superClass = superClass.getSuperclass();
@@ -187,7 +207,7 @@ public class TestRunner {
     }
 
     /**
-     * Метод валидации Before и After методов
+     * Метод валидации BeforeSuite и AfterSuite методов
      *
      * @param method         метод, который валидируется
      * @param count          текущее количество данных методов в классе
@@ -195,7 +215,7 @@ public class TestRunner {
      * @param annotationName конкретная аннотация Before или After
      * @return возвращается метод, которых необходимо запустить
      */
-    private static Method validateBeforeAndAfterMethods(Method method, AtomicInteger count, Class<?> c, String annotationName) {
+    private static Method validateBeforeSuiteAndAfterSuiteMethods(Method method, AtomicInteger count, Class<?> c, String annotationName) {
         if (!Modifier.isStatic(method.getModifiers())) {
             throw new WrongModifiersMethodException("Method - " + c.getSimpleName() + "." + method.getName() +
                     " is not a static for " + annotationName + " annotation");
@@ -207,16 +227,24 @@ public class TestRunner {
         return method;
     }
 
+    private static void validateNonStaticMethod(Method method, Class<?> c) {
+        if (Modifier.isStatic(method.getModifiers())) {
+            throw new WrongModifiersMethodException("Method - " + c.getSimpleName() + "." + method.getName() +
+                    " must be not a static for this annotation");
+        }
+    }
+
     /**
-     * Метод для запуска методов Before и After
+     * Метод для запуска методов
      *
-     * @param method метод, который необходимо выполнить
-     * @param c      класс, в котором запускаем тесты
+     * @param method   метод, который необходимо выполнить
+     * @param c        класс, в котором запускаем тесты
+     * @param instance объект класса, если метод не статический
      */
-    private static void invokeBeforeAndAfterMethods(Method method, Class<?> c) {
+    private static void invokeMethod(Method method, Class<?> c, Object instance) {
         try {
             method.setAccessible(true);
-            method.invoke(null);
+            method.invoke(instance);
         } catch (Exception e) {
             throw new InvokingMethodException("Error invoking method " + c.getSimpleName() + "." + method.getName() +
                     ": " + e.getMessage());

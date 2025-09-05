@@ -5,12 +5,12 @@ import annotations.BeforeTest;
 public class TestNegativeTwoBeforeTestParentClass {
 
     @BeforeTest
-    public static void setUp() {
+    public void setUp() {
         System.out.println("First before test");
     }
 
     @BeforeTest
-    public static void setUp2() {
+    public void setUp2() {
         System.out.println("Second before test");
     }
 }
