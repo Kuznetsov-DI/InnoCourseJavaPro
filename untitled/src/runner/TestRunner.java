@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Класс для запуска тестов
@@ -23,8 +22,6 @@ public class TestRunner {
      * @param c класс, в котором запускаем тесты
      */
     public static void runTests(Class<?> c) {
-        AtomicInteger beforeSuitCount = new AtomicInteger();
-        AtomicInteger afterSuitCount = new AtomicInteger();
         Method beforeSuiteMethod = null;
         Method afterSuiteMethod = null;
         List<Method> beforeTestMethods = new ArrayList<>();
@@ -44,12 +41,12 @@ public class TestRunner {
 
             // BeforeSuite проверки аннотации
             if (method.isAnnotationPresent(BeforeSuite.class)) {
-                beforeSuiteMethod = validateBeforeSuiteAndAfterSuiteMethods(method, beforeSuitCount, c, "BeforeSuite");
+                beforeSuiteMethod = validateBeforeSuiteAndAfterSuiteMethods(method, beforeSuiteMethod, c, "BeforeSuite");
             }
 
             // AfterSuite проверки аннотации
             if (method.isAnnotationPresent(AfterSuite.class)) {
-                afterSuiteMethod = validateBeforeSuiteAndAfterSuiteMethods(method, afterSuitCount, c, "AfterSuite");
+                afterSuiteMethod = validateBeforeSuiteAndAfterSuiteMethods(method, afterSuiteMethod, c, "AfterSuite");
             }
 
             // BeforeTest проверки аннотации
@@ -169,10 +166,9 @@ public class TestRunner {
         Method methodForInvoke = null;
 
         while (!superClass.equals(Object.class)) {
-            AtomicInteger count = new AtomicInteger();
             for (Method method : superClass.getDeclaredMethods()) {
                 if (method.isAnnotationPresent(annotation)) {
-                    methodForInvoke = validateBeforeSuiteAndAfterSuiteMethods(method, count, superClass, annotation.getName());
+                    methodForInvoke = validateBeforeSuiteAndAfterSuiteMethods(method, methodForInvoke, superClass, annotation.getName());
                 }
             }
 
@@ -210,17 +206,17 @@ public class TestRunner {
      * Метод валидации BeforeSuite и AfterSuite методов
      *
      * @param method         метод, который валидируется
-     * @param count          текущее количество данных методов в классе
+     * @param currentMethod  текущий метод BeforeSuite, для проверки повторно созданного метода
      * @param c              класс, в котором запускаем тесты
      * @param annotationName конкретная аннотация Before или After
      * @return возвращается метод, которых необходимо запустить
      */
-    private static Method validateBeforeSuiteAndAfterSuiteMethods(Method method, AtomicInteger count, Class<?> c, String annotationName) {
+    private static Method validateBeforeSuiteAndAfterSuiteMethods(Method method, Method currentMethod, Class<?> c, String annotationName) {
         if (!Modifier.isStatic(method.getModifiers())) {
             throw new WrongModifiersMethodException("Method - " + c.getSimpleName() + "." + method.getName() +
                     " is not a static for " + annotationName + " annotation");
         }
-        if (count.incrementAndGet() > 1) {
+        if (currentMethod != null) {
             throw new TooMuchMethodsException("Method  " + annotationName + "  can only be one is class - " + c.getSimpleName());
         }
 
