@@ -75,11 +75,9 @@ public class Application {
 
         // 2.6 Задание
         var interString = "слово крокодил инокентий инокентий слово слово черепашка ниндзя черепашка слов слово";
-        var wordList = List.of(interString.split(" "));
-        var sixthResult = wordList.stream()
-                .collect(Collectors.toMap(word -> word,
-                        word -> wordList.stream().filter(el -> el.equals(word)).count(),
-                        (word1, word2) -> word1));
+        var sixthResult =  Arrays.stream(interString.split(" "))
+                .filter(word -> !word.isEmpty())
+                .collect(Collectors.groupingBy(word -> word, Collectors.counting()));
 
         sixthResult.forEach((key, value) -> System.out.println("Слово - " + key + " встречалось " + value + " раз(а)"));
         System.out.println("-----------------------------------------------------------------------------------");
@@ -107,7 +105,7 @@ public class Application {
                     var array = el.split(" ");
                     return Arrays.stream(array);
                 })
-                .max(Comparator.comparingInt(String::length)).orElse(null);
+                .max(Comparator.comparingInt(String::length)).orElseThrow(() -> new RuntimeException("Не нашлось самого длинного слова"));
 
         System.out.println(eighthResult);
         System.out.println("-----------------------------------------------------------------------------------");
