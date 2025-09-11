@@ -10,7 +10,10 @@ public class Application {
         // 2.1 Задание
         var integerFirstList = List.of(5, 2, 10, 9, 4, 3, 10, 1, 13);
 
-        var firstResult = integerFirstList.stream().sorted(Comparator.reverseOrder()).toList().get(2);
+        var firstResult = integerFirstList.stream()
+                .sorted(Comparator.reverseOrder())
+                .skip(2)
+                .findFirst().orElseThrow(() -> new RuntimeException("Нет третьего элемента"));
 
         System.out.println("Третье наибольшее число - " + firstResult);
         System.out.println("-----------------------------------------------------------------------------------");
@@ -18,7 +21,11 @@ public class Application {
         // 2.2 Задание
         var integerSecondList = List.of(5, 2, 10, 9, 4, 3, 10, 1, 13);
 
-        var secondResult = new HashSet<>(integerSecondList).stream().sorted(Comparator.reverseOrder()).toList().get(2);
+        var secondResult = integerSecondList.stream()
+                .distinct()
+                .sorted(Comparator.reverseOrder())
+                .skip(2)
+                .findFirst().orElseThrow(() -> new RuntimeException("Нет третьего элемента"));
 
         System.out.println("Третье наибольшее уникальное число - " + secondResult);
         System.out.println("-----------------------------------------------------------------------------------");
@@ -38,50 +45,50 @@ public class Application {
                 new Employee("Антон", 56, "Инженер")
         );
 
-        var thirdResult = employeeList.stream().filter(el -> el.getPosition().equals("Инженер"))
-                .sorted((el1, el2) -> el2.getAge() - el1.getAge()).limit(3)
+        var thirdResult = employeeList.stream()
+                .filter(el -> el.getPosition().equals("Инженер"))
+                .sorted((el1, el2) -> el2.getAge() - el1.getAge())
+                .limit(3)
                 .map(Employee::getName).toList();
 
         System.out.println(thirdResult);
         System.out.println("-----------------------------------------------------------------------------------");
 
         // 2.4 Задание
-        var fourthResult = employeeList.stream().filter(el -> el.getPosition().equals("Инженер"))
-                .mapToInt(Employee::getAge).average().orElse(0.0);
+        var fourthResult = employeeList.stream()
+                .filter(el -> el.getPosition().equals("Инженер"))
+                .mapToInt(Employee::getAge)
+                .average()
+                .orElseThrow(() -> new RuntimeException("Не удалось посчитать средний возраст сотрудников инженеров"));
 
         System.out.println(fourthResult);
         System.out.println("-----------------------------------------------------------------------------------");
 
         // 2.5 Задание
         var stringList = List.of("Воитловаили", "товадлдфадфштдфад", "роии", "лфтыафугшаишг");
-        var fifthResult = stringList.stream().max(Comparator.comparingInt(String::length)).orElse(null);
+        var fifthResult = stringList.stream()
+                .max(Comparator.comparingInt(String::length))
+                .orElseThrow(() -> new RuntimeException("Строки с наибольшим количеством символов нет"));
 
         System.out.println(fifthResult);
         System.out.println("-----------------------------------------------------------------------------------");
 
         // 2.6 Задание
         var interString = "слово крокодил инокентий инокентий слово слово черепашка ниндзя черепашка слов слово";
-        HashMap<String, Integer> sixthResult = new HashMap<>();
-        Arrays.stream(interString.split(" ")).forEach(el -> {
-            if (sixthResult.containsKey(el)) {
-                sixthResult.put(el, sixthResult.get(el) + 1);
-            } else {
-                sixthResult.put(el, 1);
-            }
-        });
+        var wordList = List.of(interString.split(" "));
+        var sixthResult = wordList.stream()
+                .collect(Collectors.toMap(word -> word,
+                        word -> wordList.stream().filter(el -> el.equals(word)).count(),
+                        (word1, word2) -> word1));
 
         sixthResult.forEach((key, value) -> System.out.println("Слово - " + key + " встречалось " + value + " раз(а)"));
         System.out.println("-----------------------------------------------------------------------------------");
 
         // 2.7 Задание
         var secondStringList = List.of("Аоитловаили", "товадлдфадфштдфад", "роии", "лфтыафугшаишг", "ноитловаили", "Повадлдфадфштдфад");
-        var seventhResult = secondStringList.stream().sorted((el1, el2) -> {
-            if (el1.length() == el2.length()) {
-                return el1.compareToIgnoreCase(el2);
-            } else {
-                return el1.length() - el2.length();
-            }
-        }).toList();
+        var seventhResult = secondStringList.stream()
+                .sorted(Comparator.comparing(String::length).thenComparing(String.CASE_INSENSITIVE_ORDER))
+                .toList();
 
         System.out.println(seventhResult);
         System.out.println("-----------------------------------------------------------------------------------");
@@ -95,9 +102,12 @@ public class Application {
                 "один два три самоедлинноеопять пять"
         );
 
-        List<String> wordsList = new ArrayList<>();
-        listOfString.forEach(el -> wordsList.addAll(List.of(el.split(" "))));
-        var eighthResult = wordsList.stream().max(Comparator.comparingInt(String::length)).orElse(null);
+        var eighthResult = listOfString.stream()
+                .flatMap(el -> {
+                    var array = el.split(" ");
+                    return Arrays.stream(array);
+                })
+                .max(Comparator.comparingInt(String::length)).orElse(null);
 
         System.out.println(eighthResult);
         System.out.println("-----------------------------------------------------------------------------------");
