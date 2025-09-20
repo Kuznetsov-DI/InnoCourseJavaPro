@@ -21,8 +21,8 @@ public class CustomerThreadPool {
         }
     }
 
-    public void execute(Runnable r) {
-        if (r == null) {
+    public void execute(Runnable runnable) {
+        if (runnable == null) {
             throw new NullPointerException("Runnable cannot be null");
         }
 
@@ -30,7 +30,7 @@ public class CustomerThreadPool {
             if (isShutdown) {
                 throw new IllegalStateException("Pool is shutdown");
             }
-            execPool.add(r);
+            execPool.add(runnable);
             execPool.notify();
         }
     }
