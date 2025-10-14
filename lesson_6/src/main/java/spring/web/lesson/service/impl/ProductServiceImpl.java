@@ -15,13 +15,14 @@ import java.util.List;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository repository;
+    private final ProductEntityToProductDto converter;
 
     @Override
     @Transactional
     public List<ProductDto> getProductsByUserId(Long userId) {
         var productEntities = repository.findByUserId(userId);
 
-        return productEntities.stream().map(ProductEntityToProductDto::convert).toList();
+        return productEntities.stream().map(converter::convert).toList();
     }
 
     @Override
@@ -29,6 +30,6 @@ public class ProductServiceImpl implements ProductService {
     public ProductDto getProductById(Long productId) {
         var productEntity = repository.getReferenceById(productId);
 
-        return ProductEntityToProductDto.convert(productEntity);
+        return converter.convert(productEntity);
     }
 }
