@@ -2,9 +2,12 @@ package spring.web.lesson.service.impl;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
 import spring.web.lesson.converter.ProductEntityToProductDto;
+import spring.web.lesson.dto.DebitRequestDto;
 import spring.web.lesson.dto.ProductDto;
+import spring.web.lesson.exception.NotEnoughBalanceException;
 import spring.web.lesson.repository.ProductRepository;
 import spring.web.lesson.service.ProductService;
 
@@ -31,5 +34,18 @@ public class ProductServiceImpl implements ProductService {
         var productEntity = repository.getReferenceById(productId);
 
         return converter.convert(productEntity);
+    }
+
+    @Override
+    @SneakyThrows
+    @Transactional
+    public void debitByProductId(DebitRequestDto request) {
+        var productEntity = repository.getReferenceById(request.productId());
+        if (request.sum() > productEntity.getBalance()) {
+            throw new NotEnoughBalanceException("Not enough balance for debit for product - " + productEntity.getId());
+        }
+        var newBalance = productEntity.getBalance() - request.sum();
+
+        repository.updateBalance(productEntity.getId(), newBalance);
     }
 }

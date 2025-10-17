@@ -1,11 +1,9 @@
 package spring.web.lesson.controller.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import spring.web.lesson.controller.ProductController;
+import spring.web.lesson.dto.DebitRequestDto;
 import spring.web.lesson.dto.ProductDto;
 import spring.web.lesson.service.ProductService;
 
@@ -30,5 +28,11 @@ public class ProductControllerImpl implements ProductController {
     public ProductDto getProductById(@PathVariable(name = "productId") Long productId) {
 
         return productService.getProductById(productId);
+    }
+
+    @Override
+    @PostMapping("/debit")
+    public void debitByProductId(@RequestBody DebitRequestDto request) {
+        productService.debitByProductId(request);
     }
 }
