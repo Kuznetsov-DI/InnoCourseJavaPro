@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: payments-core
+
+server:
+  port: 8990
+
+integrations:
+  clients:
+    product-client:
+      url: "http://localhost:8989/products"
+      connect-timeout: 3S
+      read-timeout: 10S

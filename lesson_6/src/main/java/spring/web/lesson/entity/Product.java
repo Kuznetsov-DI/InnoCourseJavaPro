@@ -22,7 +22,7 @@ public class Product {
     private String accountNumber;
 
     @Column(name = "balance", nullable = false)
-    private String balance;
+    private Double balance;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "product_type")
