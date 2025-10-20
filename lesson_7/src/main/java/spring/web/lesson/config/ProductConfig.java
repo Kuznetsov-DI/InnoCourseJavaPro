@@ -5,6 +5,7 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
+import spring.web.lesson.client.handlers.ProductClientResponseHandler;
 import spring.web.lesson.config.properties.ProductClientProperties;
 
 @Configuration
@@ -18,13 +19,14 @@ public class ProductConfig {
     }
 
     @Bean
-    public RestTemplate restTemplateProductClient() {
+    public RestTemplate restTemplateProductClient(ProductClientResponseHandler productClientResponseHandler) {
         var executorClient = productClientProperties.getProductClient();
 
         return new RestTemplateBuilder()
                 .rootUri(executorClient.getUrl())
                 .setConnectTimeout(executorClient.getConnectTimeout())
                 .setReadTimeout(executorClient.getReadTimeout())
+                .errorHandler(productClientResponseHandler)
                 .build();
     }
 }
